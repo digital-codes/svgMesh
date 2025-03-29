@@ -12,6 +12,27 @@ from PIL import Image
 def simplify_polygon(polygon, tolerance=0.5):
     return polygon.simplify(tolerance, preserve_topology=True)
 
+def normalize_polygons(polygons, max_size=100.0):
+    """
+    Scales all polygons proportionally to fit within max_size bounding box.
+    """
+    from shapely.affinity import scale
+    from shapely.geometry import MultiPolygon
+
+    combined = MultiPolygon(polygons)
+    minx, miny, maxx, maxy = combined.bounds
+    width = maxx - minx
+    height = maxy - miny
+
+    current_max = max(width, height)
+    if current_max <= max_size:
+        return polygons  # no scaling needed
+
+    scale_factor = max_size / current_max
+    scaled = [scale(p, xfact=scale_factor, yfact=scale_factor, origin=(0, 0)) for p in polygons]
+    return scaled
+
+
 def parse_svg_polygons(svg_file, scale=1.0):
     tree = ET.parse(svg_file)
     root = tree.getroot()
@@ -60,7 +81,7 @@ def apply_texture(mesh, image_path, tile_scale=10):
 
 
 
-def extrude_svg_with_textures(svg_file, extrusion_height=5.0, scale=1.0, output_file="hatched_model.glb"):
+def extrude_svg_with_textures(svg_file, extrusion_height=.20, scale=1.0, output_file="hatched_model.glb"):
     paths, _, _ = svg2paths2(svg_file)
     path_polys = svg_path_to_polygons(paths, scale)
     polygon_elements = parse_svg_polygons(svg_file, scale)
@@ -68,14 +89,17 @@ def extrude_svg_with_textures(svg_file, extrusion_height=5.0, scale=1.0, output_
     raw_polygons = path_polys + polygon_elements
 
     # Simplify all polygons
-    all_polygons = []
+    simplified_polygons = []
     for poly in raw_polygons:
         simplified = simplify_polygon(poly, tolerance=0.1)  # tweak tolerance as needed
         if simplified.is_valid and not simplified.is_empty:
-            all_polygons.append(simplified)
+            simplified_polygons.append(simplified)
 
-    if not all_polygons:
+    if not simplified_polygons:
         raise ValueError("No valid shapes to extrude.")
+
+    # Normalize to max size (e.g. 100 units wide/tall)
+    all_polygons = normalize_polygons(simplified_polygons, max_size=10.0)
 
     # List of hatch textures
     textures = ["hatch1.png", "hatch2.png", "hatch3.png", "hatch4.png"]
@@ -99,9 +123,14 @@ def extrude_svg_with_textures(svg_file, extrusion_height=5.0, scale=1.0, output_
 
 
 # Example usage
+
+icon = "example.svg"
+icon = "openmoji-svg-color/E25E.svg"
+icon = "openmoji-svg-color/1FAAB.svg"
+
 extrude_svg_with_textures(
-    svg_file="example.svg",
-    extrusion_height=10,
+    svg_file=icon,
+    extrusion_height=1,
     scale=0.1,
     output_file="hatched_model.glb"
 )
