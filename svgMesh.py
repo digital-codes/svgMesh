@@ -124,9 +124,16 @@ def extrude_svg_with_textures(
             mesh = extrude_polygon(poly, height=extrusion_height)
             texture_path = random.choice(textures)
             mesh = apply_texture(mesh, texture_path, tile_scale=tile_scale)
+            mesh.apply_translation([0, 0, -extrusion_height / 2])  # center vertically
             meshes.append(mesh)
 
     combined = trimesh.util.concatenate(meshes)
+    combined.remove_unreferenced_vertices()
+    
+    # Shift to bottom-center of bounding box
+    bbox = combined.bounds
+    center_xy = (bbox[0][0] + bbox[1][0]) / 2, (bbox[0][1] + bbox[1][1]) / 2
+    combined.apply_translation([-center_xy[0], -center_xy[1], -bbox[0][2]])
 
     return combined
 
