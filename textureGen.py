@@ -1,6 +1,12 @@
 from PIL import Image, ImageDraw
 import numpy as np
-import math
+
+def create_color_texture(filename, color, alpha=255, size=256):
+    """Generate a solid color PNG texture."""
+    img = Image.new("RGBA", (size, size), color + (alpha,))
+    img.save(filename, format="PNG")
+
+
 
 def create_hatch_texture(filename, pattern="diagonal", line_spacing=10, rotate_degrees=0):
     size = 256
@@ -32,3 +38,8 @@ create_hatch_texture("hatch1.png", pattern="diagonal", line_spacing=8, rotate_de
 create_hatch_texture("hatch2.png", pattern="crosshatch", line_spacing=8, rotate_degrees=0)
 create_hatch_texture("hatch3.png", pattern="diagonal", line_spacing=6, rotate_degrees=45)
 create_hatch_texture("hatch4.png", pattern="crosshatch", line_spacing=6, rotate_degrees=30)
+
+# Generate the textures
+create_color_texture("yellow.png", (255, 255, 0))         # Bright yellow
+create_color_texture("red.png", (192, 0, 0))             # Deep red (for metallic style)
+create_color_texture("blue.png", (0, 128, 255), 128)  # Semi-transparent blue

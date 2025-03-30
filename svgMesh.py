@@ -115,7 +115,7 @@ def extrude_svg_with_textures(
 
     all_polygons = normalize_polygons(simplified_polygons, max_size=max_size)
 
-    textures = ["hatch1.png", "hatch2.png", "hatch3.png", "hatch4.png"]
+    textures = ["hatch1.png", "hatch2.png", "hatch3.png", "hatch4.png","red.png", "blue.png", "yellow.png"]
     meshes = []
 
     for idx, poly in enumerate(all_polygons):
