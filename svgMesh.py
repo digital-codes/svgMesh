@@ -8,6 +8,7 @@ import trimesh
 from PIL import Image
 import xml.etree.ElementTree as ET
 from svgpathtools import svg2paths2
+from svgpathtools import Path
 from shapely.geometry import Polygon, MultiPolygon
 from shapely.ops import unary_union
 from shapely.affinity import scale
@@ -16,7 +17,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 
 
-def parse_svg_polygons(svg_file, scale=1.0):
+def parse_svg_polygons(svg_file, scale=1.0, auto_close=False):
     tree = ET.parse(svg_file)
     root = tree.getroot()
     polygons = []
@@ -30,24 +31,35 @@ def parse_svg_polygons(svg_file, scale=1.0):
                     points.append((x * scale, y * scale))
                 except:
                     continue
-            if len(points) >= 3:
+            if auto_close:
+                poly = close_polygon(points)
+            else:
                 poly = Polygon(points)
-                if poly.is_valid:
-                    polygons.append(poly)
+            if poly and poly.is_valid:
+                polygons.append(poly)
     return polygons
 
 
-def svg_path_to_polygons(svg_paths, scale=1.0):
-    from svgpathtools import Path
+def svg_path_to_polygons(svg_paths, scale=1.0, auto_close=False):
     polygons = []
     for path in svg_paths:
         if isinstance(path, Path):
             points = [(seg.start.real * scale, seg.start.imag * scale) for seg in path]
-            if len(points) > 2:
+            if auto_close:
+                poly = close_polygon(points)
+            else:
                 poly = Polygon(points)
-                if poly.is_valid:
-                    polygons.append(poly)
+            if poly and poly.is_valid:
+                polygons.append(poly)
     return polygons
+
+def close_polygon(points):
+    if len(points) < 3:
+        return None
+    # If not already closed, append the first point to the end
+    if points[0] != points[-1]:
+        points.append(points[0])
+    return Polygon(points)
 
 
 def simplify_polygon(polygon, tolerance=0.5):
@@ -83,16 +95,17 @@ def extrude_svg_with_textures(
     output_file="hatched_model.glb",
     tolerance=0.5,
     max_size=100.0,
-    tile_scale=10
+    tile_scale=10,
+    auto_close=False
 ):
     paths, _, _ = svg2paths2(svg_file)
-    path_polys = svg_path_to_polygons(paths, scale)
-    polygon_elements = parse_svg_polygons(svg_file, scale)
+    path_polys = svg_path_to_polygons(paths, scale, auto_close)
+    polygon_elements = parse_svg_polygons(svg_file, scale, auto_close)
     raw_polygons = path_polys + polygon_elements
 
     simplified_polygons = []
     for poly in raw_polygons:
-        simplified = simplify_polygon(poly, tolerance=tolerance)
+        simplified = simplify_polygon(poly, tolerance=tolerance) if tolerance > 0 else poly
         if simplified.is_valid and not simplified.is_empty:
             simplified_polygons.append(simplified)
 
@@ -133,12 +146,13 @@ def extrude_svg_with_textures(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extrude SVG paths to 3D mesh")
     parser.add_argument("-i", "--input", type=str, help="Input SVG file", default="example.svg")
-    parser.add_argument("-o", "--output", type=str, default="model.glb", help="Output GLB file")
+    parser.add_argument("-o", "--output", type=str, default="model.glb", help="Output GLB/GLTF file")
     parser.add_argument("-e", "--extrusion", type=float, default=1.0, help="Extrusion height")
     parser.add_argument("-s", "--scale", type=float, default=1.0, help="Scale factor")
     parser.add_argument("-t", "--tolerance", type=float, default=0.8, help="Simplify tolerance")
     parser.add_argument("-m", "--max_size", type=float, default=10.0, help="Max size")
     parser.add_argument("--tile_scale", type=float, default=10, help="Texture tile scale")
+    parser.add_argument("--auto_close", action="store_true", help="Auto-close open paths or polygons.")
     args = parser.parse_args()
     
     extrude_svg_with_textures(
@@ -148,5 +162,6 @@ if __name__ == "__main__":
         output_file=args.output,
         tolerance=args.tolerance,
         max_size=args.max_size,
-        tile_scale=args.tile_scale
+        tile_scale=args.tile_scale,
+        auto_close=args.auto_close
     )
