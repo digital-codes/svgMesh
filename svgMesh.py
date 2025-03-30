@@ -40,18 +40,25 @@ def parse_svg_polygons(svg_file, scale=1.0, auto_close=False):
     return polygons
 
 
-def svg_path_to_polygons(svg_paths, scale=1.0, auto_close=False):
+def svg_path_to_polygons(svg_paths, scale=1.0, auto_close=False, min_points=3):
     polygons = []
+
     for path in svg_paths:
         if isinstance(path, Path):
-            points = [(seg.start.real * scale, seg.start.imag * scale) for seg in path]
-            if auto_close:
-                poly = close_polygon(points)
-            else:
+            # Sample points along the path (curve)
+            sampled = [path.point(t) for t in np.linspace(0, 1, num=50)]
+            points = [(p.real * scale, p.imag * scale) for p in sampled]
+
+            if auto_close and len(points) >= 2:
+                if points[0] != points[-1]:
+                    points.append(points[0])
+
+            if len(points) >= min_points:
                 poly = Polygon(points)
-            if poly and poly.is_valid:
-                polygons.append(poly)
+                if poly.is_valid and not poly.is_empty:
+                    polygons.append(poly)
     return polygons
+
 
 def close_polygon(points):
     if len(points) < 3:
