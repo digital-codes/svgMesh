@@ -1,5 +1,18 @@
 import trimesh
 import numpy as np
+from PIL import Image
+
+# load textures
+textures = ["hatch1.png", "hatch2.png", "hatch3.png", "hatch4.png","red.png", "blue.png", "yellow.png"]
+
+def apply_texture(mesh, image_path, tile_scale=10):
+    image = Image.open(image_path).convert("RGBA")
+    uv = mesh.vertices[:, :2] * tile_scale
+    uv = uv - uv.min(axis=0)
+    uv = uv / uv.max(axis=0)
+    mesh.visual = trimesh.visual.texture.TextureVisuals(uv=uv, image=image)
+    return mesh
+
 
 def create_primitive_meshes():
     # Create individual primitives
@@ -17,6 +30,13 @@ def create_primitive_meshes():
     cylinder.apply_translation((60, 0, 0))
     torus.apply_translation((90, 0, 0))
 
+    cube = apply_texture(cube, textures[0])
+    cube2 = apply_texture(cube2, textures[1])
+    sphere = apply_texture(sphere, textures[2])
+    sphere2 = apply_texture(sphere2, textures[3])
+    cylinder = apply_texture(cylinder, textures[4])
+    torus = apply_texture(torus, textures[5])
+
     """Create a non-uniformly scaled sphere (ellipsoid)."""
     sphere2_scale_factors=(1.0, 1.5, 0.75)
     sphere2.apply_scale(sphere2_scale_factors)
@@ -24,8 +44,10 @@ def create_primitive_meshes():
     combined = trimesh.util.concatenate([cube, cube2, sphere, sphere2, cylinder, torus])
     return combined
 
+
 # Generate and show
 mesh = create_primitive_meshes()
+
 
 # Center on bottom-middle
 bbox = mesh.bounds
