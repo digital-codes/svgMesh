@@ -26,7 +26,7 @@ def parse_svg_polygons(svg_file, scale=1.0, auto_close=False):
             for point in points_str.strip().split():
                 try:
                     x, y = map(float, point.strip().split(','))
-                    points.append((x * scale, y * scale))
+                    points.append((x * scale, -y * scale))
                 except:
                     continue
             if auto_close:
@@ -45,7 +45,7 @@ def svg_path_to_polygons(svg_paths, scale=1.0, auto_close=False, min_points=3):
         if isinstance(path, Path):
             # Sample points along the path (curve)
             sampled = [path.point(t) for t in np.linspace(0, 1, num=50)]
-            points = [(p.real * scale, p.imag * scale) for p in sampled]
+            points = [(p.real * scale, -p.imag * scale) for p in sampled]
 
             if auto_close and len(points) >= 2:
                 if points[0] != points[-1]:
