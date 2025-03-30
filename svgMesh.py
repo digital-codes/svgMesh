@@ -130,21 +130,6 @@ def extrude_svg_with_textures(
 
     return combined
 
-def preview_glb_with_qt(filepath):
-    app = QApplication(sys.argv)
-    window = QMainWindow()
-    view = QWebEngineView()
-
-    html_path = os.path.abspath("viewer.html")
-    html_url = QUrl.fromLocalFile(html_path)
-
-    view.load(html_url)
-
-    window.setCentralWidget(view)
-    window.resize(800, 600)
-    window.show()
-    sys.exit(app.exec_())
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extrude SVG paths to 3D mesh")
     parser.add_argument("-i", "--input", type=str, help="Input SVG file", default="example.svg")
