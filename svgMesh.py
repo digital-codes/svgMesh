@@ -13,8 +13,6 @@ from shapely.geometry import Polygon, MultiPolygon
 from shapely.ops import unary_union
 from shapely.affinity import scale
 from trimesh.creation import extrude_polygon
-import tkinter as tk
-from tkinter import filedialog, messagebox
 
 
 def parse_svg_polygons(svg_file, scale=1.0, auto_close=False):
@@ -99,7 +97,6 @@ def extrude_svg_with_textures(
     svg_file,
     extrusion_height=5.0,
     scale=1.0,
-    output_file="hatched_model.glb",
     tolerance=0.5,
     max_size=100.0,
     tile_scale=10,
@@ -131,24 +128,22 @@ def extrude_svg_with_textures(
 
     combined = trimesh.util.concatenate(meshes)
 
-    # Choose export type based on extension
-    file_type = os.path.splitext(output_file)[-1].lower()
+    return combined
 
-    if file_type == '.glb':
-        combined.export(output_file, file_type='glb')
-    elif file_type == '.gltf':
-        combined.export(output_file, file_type='gltf')  # saves .gltf + .bin + textures if present
-    else:
-        raise ValueError("Output file must end in .glb or .gltf")
+def preview_glb_with_qt(filepath):
+    app = QApplication(sys.argv)
+    window = QMainWindow()
+    view = QWebEngineView()
 
-    print(f"\n✅ Exported: {output_file}")
-    print(f"🔢 Vertices: {len(combined.vertices)}")
-    print(f"🔺 Faces: {len(combined.faces)}")
-    print(f"📦 Bounding Box: {combined.bounds}")
+    html_path = os.path.abspath("viewer.html")
+    html_url = QUrl.fromLocalFile(html_path)
 
+    view.load(html_url)
 
-
-
+    window.setCentralWidget(view)
+    window.resize(800, 600)
+    window.show()
+    sys.exit(app.exec_())
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extrude SVG paths to 3D mesh")
@@ -162,13 +157,36 @@ if __name__ == "__main__":
     parser.add_argument("--auto_close", action="store_true", help="Auto-close open paths or polygons.")
     args = parser.parse_args()
     
-    extrude_svg_with_textures(
+    mesh = extrude_svg_with_textures(
         svg_file=args.input,
         extrusion_height=args.extrusion,
         scale=args.scale,
-        output_file=args.output,
         tolerance=args.tolerance,
         max_size=args.max_size,
         tile_scale=args.tile_scale,
         auto_close=args.auto_close
     )
+
+    if mesh:
+        
+        # Choose export type based on extension
+        file_type = os.path.splitext(args.output)[-1].lower()
+
+        if file_type == '.glb':
+            mesh.export(args.output, file_type='glb')
+            if not os.path.exists("viewer/public"):
+                os.makedirs("viewer/public")
+            mesh.export("viewer/public/preview.glb", file_type='glb')  # save preview.glb for web viewer
+        elif file_type == '.gltf':
+            mesh.export(args.output, file_type='gltf')  # saves .gltf + .bin + textures if present
+        else:
+            raise ValueError("Output file must end in .glb or .gltf")
+
+        print(f"\n✅ Exported: {args.output}")
+        print(f"🔢 Vertices: {len(mesh.vertices)}")
+        print(f"🔺 Faces: {len(mesh.faces)}")
+        print(f"📦 Bounding Box: {mesh.bounds}")
+            
+    else:
+        print("❌ No mesh generated.")
+        
