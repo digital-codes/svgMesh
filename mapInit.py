@@ -101,7 +101,7 @@ center_lat, center_lon = 49.006889, 8.403653
 radius_m = 5000  # 5 km in meters
 zoom = 14
 tile_url_template = "https://sgx.geodatenzentrum.de/gdz_basemapde_vektor/tiles/v2/bm_web_de_3857/{z}/{x}/{y}.pbf"
-keywords = ["Verkehr", "Siedlung", "Gebaeude", "Gebäude"]
+keywords = ["Verkehr", "Siedlung", "Gebaeude", "Gebäude", "Name_"]
 
 # --- Prepare Output ---
 os.makedirs("geojson_tiles", exist_ok=True)
@@ -178,7 +178,12 @@ for tile in tiles:
                     transformed_geom = transform_geometry_to_3857(geom,tile_bounds,extent)
 
                     if transformed_geom and transformed_geom.IsValid():
-                        merged_layer_dict[lname].append(transformed_geom)
+                        merged_layer_dict[lname].append(
+                            {
+                                "properties": {k: feat.GetField(k) for k in feat.keys()},
+                                "geometry":transformed_geom
+                            }
+                        )
                     else:
                         print(f"⚠️ Invalid geometry in {tile_filename}, layer: {lname}")
                 except Exception as e:
@@ -189,12 +194,31 @@ driver = ogr.GetDriverByName("GeoJSON")
 srs = osr.SpatialReference()
 srs.ImportFromEPSG(3857)
 
-for lname, geoms in merged_layer_dict.items():
-    print(f"🛠️ Writing {lname} with {len(geoms)} geometries...")
+for lname, features in merged_layer_dict.items():
+    print(f"🛠️ Writing {lname} with {len(features)} features...")
     output_ds = driver.CreateDataSource(f"{lname}_merged.geojson")
     layer = output_ds.CreateLayer(lname, srs, ogr.wkbUnknown)
 
-    for geom in geoms:
+    # Build complete field schema from all features
+    all_keys = set()
+    for feat in features:
+        all_keys.update(feat["properties"].keys())
+
+    for key in all_keys:
+        # Guess field type from first non-None value
+        sample_value = next((f["properties"].get(key) for f in features if f["properties"].get(key) is not None), "")
+        if isinstance(sample_value, int):
+            field_type = ogr.OFTInteger
+        elif isinstance(sample_value, float):
+            field_type = ogr.OFTReal
+        else:
+            field_type = ogr.OFTString
+        field = ogr.FieldDefn(key, field_type)
+        layer.CreateField(field)
+
+    for feature in features:
+        geom = feature["geometry"]
+        props = feature["properties"]
         try:
             if not geom.IsValid():
                 geom = geom.Buffer(0)
@@ -202,6 +226,12 @@ for lname, geoms in merged_layer_dict.items():
             if geom.IsValid():
                 feat = ogr.Feature(layer.GetLayerDefn())
                 feat.SetGeometry(geom)
+
+                # Set all attribute fields
+                for key, value in props.items():
+                    if value is not None:
+                        feat.SetField(key, value)
+
                 layer.CreateFeature(feat)
                 feat = None
         except Exception as e:
