@@ -3,6 +3,8 @@ import requests
 import mercantile
 from osgeo import ogr, osr
 import re
+import time
+from pyproj import Transformer
 
 # Config
 center_lat, center_lon = 49.006889, 8.403653
@@ -10,18 +12,22 @@ radius_km = 5
 zoom = 14
 # tile_url_template = "https://sgx.geodatenzentrum.de/gdz_basemapde_vektor/tiles/web_gry/{z}/{x}/{y}.pbf"
 tile_url_template = "https://sgx.geodatenzentrum.de/gdz_basemapde_vektor/tiles/v2/bm_web_de_3857/{z}/{x}/{y}.pbf"
-layers_of_interest = ['building', 'transportation']
 keywords = ["Verkehr", "Siedlung", "Gebaeude", "Gebäude"]
 
-# Convert km to degrees (approximate)
-def km_to_deg(km): return km / 111.0
+# Transform lat/lon to EPSG:3857
+transformer = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
+center_x, center_y = transformer.transform(center_lon, center_lat)
 
-lat_min = center_lat - km_to_deg(radius_km)
-lat_max = center_lat + km_to_deg(radius_km)
-lon_min = center_lon - km_to_deg(radius_km)
-lon_max = center_lon + km_to_deg(radius_km)
+x_min = center_x - radius_km * 1000
+x_max = center_x + radius_km * 1000
+y_min = center_y - radius_km * 1000
+y_max = center_y + radius_km * 1000
 
-tiles = list(mercantile.tiles(lon_min, lat_min, lon_max, lat_max, zooms=zoom))
+transformer_to_latlon = Transformer.from_crs("EPSG:3857", "EPSG:4326", always_xy=True)
+lon_min, lat_min = transformer_to_latlon.transform(x_min, y_min)
+lon_max, lat_max = transformer_to_latlon.transform(x_max, y_max)
+
+tiles = list(mercantile.tiles(lon_min, lat_min, lon_max, lat_max, zoom))
 print(f"Fetching {len(tiles)} tiles...")
 
 merged_layer_dict = {}
