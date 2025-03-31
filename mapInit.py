@@ -98,10 +98,10 @@ def transform_geometry_to_3857(geom,tile_bounds,extent):
 
 # --- Configuration ---
 center_lat, center_lon = 49.006889, 8.403653
-radius_m = 5000  # 5 km in meters
-zoom = 14
+radius_m = 3000  # 5 km in meters
+zoom = 15
 tile_url_template = "https://sgx.geodatenzentrum.de/gdz_basemapde_vektor/tiles/v2/bm_web_de_3857/{z}/{x}/{y}.pbf"
-keywords = ["Verkehr", "Siedlung", "Gebaeude", "Gebäude", "Name_"]
+keywords = ["Verkehr", "Siedlung", "Gebaeude", "Gebäude", "Bauwerk", "Gewaesser", "Adresse", "Name_"]
 
 # --- Prepare Output ---
 os.makedirs("geojson_tiles", exist_ok=True)
