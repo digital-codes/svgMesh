@@ -3,6 +3,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 
 import { makeMap } from './geo.js';
 
@@ -85,17 +87,38 @@ shape.lineTo(1, 0);
 shape.closePath();
 const extrudeSettings = { steps: 2, depth: 2, bevelEnabled: true, bevelThickness: 0, bevelSize: 0, bevelSegments: 1 };
 const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-const material = new THREE.MeshStandardMaterial({ color: 0xffff00, side:THREE.DoubleSide }); // Top and bottom faces
-const sideMaterial = new THREE.MeshStandardMaterial({ color: 0x008080, side:THREE.DoubleSide }); // Side faces
+const material = new THREE.MeshStandardMaterial({ color: 0xffff00, side: THREE.DoubleSide }); // Top and bottom faces
+const sideMaterial = new THREE.MeshStandardMaterial({ color: 0x008080, side: THREE.DoubleSide }); // Side faces
 const mesh = new THREE.Mesh(geometry, [material, sideMaterial]);
 mesh.position.set(5, 5, 0.5);
 scene.add(mesh);
 
 
-const loader = new GLTFLoader();
+// 
+const floader = new FontLoader();
+const font = await floader.loadAsync('/fonts/helvetiker_regular.typeface.json');
+const txt = "blah 123"
+const txtGeo = new TextGeometry(txt, {
+  font,
+  size: 1,
+  depth: .1,
+  curveSegments: 6,
+  bevelEnabled: true,
+  bevelThickness: 0,
+  bevelSize: 0,
+  bevelOffset: 0,
+  bevelSegments: 1
+});
+const txtMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+const txtMesh = new THREE.Mesh(txtGeo, txtMaterial);
+txtMesh.position.set(5, 6, 1);
+scene.add(txtMesh);
+
+
+const gloader = new GLTFLoader();
 const prg = (xhr) => { console.log((xhr.loaded / xhr.total * 100) + '% loaded') }
 
-const gltf = await loader.loadAsync('/preview.glb', prg)
+const gltf = await gloader.loadAsync('/preview.glb', prg)
 const model = gltf.scene;
 scene.add(model);
 
@@ -106,10 +129,10 @@ box.getCenter(center);
 model.position.sub(center);
 
 if (useMap) {
-  const buildings = await makeMap() 
+  const buildings = await makeMap()
   buildings.position.set(0, 0, 0);
   buildings.rotation.x = -Math.PI / 2; // Rotate 45 degrees around the X-axis
-  scene.add(buildings); 
+  scene.add(buildings);
 }
 
 

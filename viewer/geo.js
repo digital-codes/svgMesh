@@ -28,14 +28,14 @@ const makeMap = async () => {
       } else if (geom.type == 'MultiPolygon') {
         mpoly = geom.coordinates
       } else console.error('unknown geometry type', geom.type)
-      console.log(mpoly.length, mpoly[0].length, mpoly[0][0].length, mpoly[0][0][0].length)
+      //console.log(mpoly.length, mpoly[0].length, mpoly[0][0].length, mpoly[0][0][0].length)
 
       mpoly[0].forEach(polygon => {
-        console.log(polygon)
+        //console.log(polygon)
         const shape = new THREE.Shape();
         polygon.forEach((point, index) => {
           point = [(point[0] - mapCenter[0]) / scale, (point[1] - mapCenter[1]) / scale];
-          console.log(point)
+          //console.log(point)
           if (index === 0) {
             shape.moveTo(point[0], point[1]);
           } else {
@@ -50,7 +50,6 @@ const makeMap = async () => {
         const mesh = new THREE.Mesh(geometry, [material, sideMaterial]);
 
         // Adjust position to account for extrusion along Z-axis
-        console.log(mesh)
         //mesh.position.set(5, 5, height / 2);
         group.add(mesh);
       });
