@@ -6,6 +6,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 
+import helvetica from 'three/examples/fonts/helvetiker_regular.typeface.json?url';
+
 import { makeMap } from './geo.js';
 
 /* threejs:
@@ -94,9 +96,9 @@ mesh.position.set(5, 5, 0.5);
 scene.add(mesh);
 
 
-// 
+// font
 const floader = new FontLoader();
-const font = await floader.loadAsync('/fonts/helvetiker_regular.typeface.json');
+const font = await floader.loadAsync(helvetica)
 const txt = "blah 123"
 const txtGeo = new TextGeometry(txt, {
   font,
@@ -114,7 +116,7 @@ const txtMesh = new THREE.Mesh(txtGeo, txtMaterial);
 txtMesh.position.set(5, 6, 1);
 scene.add(txtMesh);
 
-
+// gltf
 const gloader = new GLTFLoader();
 const prg = (xhr) => { console.log((xhr.loaded / xhr.total * 100) + '% loaded') }
 
