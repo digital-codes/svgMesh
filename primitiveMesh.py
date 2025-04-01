@@ -1,5 +1,4 @@
 import trimesh
-import numpy as np
 from PIL import Image
 
 # load textures
@@ -42,12 +41,11 @@ def create_primitive_meshes():
     sphere2.apply_scale(sphere2_scale_factors)
     # Combine all meshes
     combined = trimesh.util.concatenate([cube, cube2, sphere, sphere2, cylinder, torus])
-    return combined
+    return combined, [cube, cube2, sphere, sphere2, cylinder, torus]
 
 
 # Generate and show
-mesh = create_primitive_meshes()
-
+mesh, items = create_primitive_meshes()
 
 # Center on bottom-middle
 bbox = mesh.bounds
@@ -57,3 +55,18 @@ mesh.apply_translation([-center_xy[0], -center_xy[1], -bbox[0][2]])
 # Export to GLB or show
 mesh.export("primitives.glb")
 # mesh.show()  # Optional preview if pyglet is <2.0
+
+# some boolean ops
+# Boolean difference: cube - sphere
+cutout = items[0].difference(items[2].apply_translation((-20, 0, 0)))
+
+# Save result
+cutout.export("cube_minus_half_sphere.glb")
+
+# Move the cylinder to go through the cube along Z
+items[4].apply_translation((0, 0, 0))  # Already centered at origin, passes through cube
+
+# Attempt boolean subtraction (only works if backend is functional)
+result = items[0].difference(items[4].apply_translation((-60, 0, 0)))
+result.export("cube_with_hole.glb")
+
