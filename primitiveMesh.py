@@ -78,7 +78,7 @@ def generate_planar_uv(mesh, tile_scale=1):
     uv = xy * tile_scale
     return uv
 
-uv = generate_planar_uv(cutout, tile_scale=10)
+uv = generate_planar_uv(cutout, tile_scale=1)
 cutout.visual = trimesh.visual.texture.TextureVisuals(uv=uv)  # no image
 
 
@@ -90,7 +90,7 @@ items[4].apply_translation((0, 0, 0))  # Already centered at origin, passes thro
 
 # Attempt boolean subtraction (only works if backend is functional)
 result = items[0].difference(items[4].apply_translation((-60, 0, 0)))
-uv = generate_planar_uv(result, tile_scale=10)
+uv = generate_planar_uv(result, tile_scale=1)
 result.visual = trimesh.visual.texture.TextureVisuals(uv=uv)  # no image
 
 result.export("cube_with_hole.glb")
