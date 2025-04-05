@@ -59,6 +59,28 @@ mesh.export("primitives.glb")
 # some boolean ops
 # Boolean difference: cube - sphere
 cutout = items[0].difference(items[2].apply_translation((-20, 0, 0)))
+# Assign UVs without texture
+def generate_planar_uv(mesh, tile_scale=1):
+    """
+    Generate UVs from mesh XY plane without altering geometry.
+    Returns UV array without modifying the mesh itself.
+    """
+    # Project XY only
+    xy = mesh.vertices[:, :2].copy()
+
+    # Normalize to 0–1 range
+    xy -= xy.min(axis=0)
+    scale = xy.max(axis=0)
+    scale[scale == 0] = 1  # avoid division by zero
+    xy /= scale
+
+    # Apply tile scale (repeat texture)
+    uv = xy * tile_scale
+    return uv
+
+uv = generate_planar_uv(cutout, tile_scale=10)
+cutout.visual = trimesh.visual.texture.TextureVisuals(uv=uv)  # no image
+
 
 # Save result
 cutout.export("cube_minus_half_sphere.glb")
@@ -68,5 +90,8 @@ items[4].apply_translation((0, 0, 0))  # Already centered at origin, passes thro
 
 # Attempt boolean subtraction (only works if backend is functional)
 result = items[0].difference(items[4].apply_translation((-60, 0, 0)))
+uv = generate_planar_uv(result, tile_scale=10)
+result.visual = trimesh.visual.texture.TextureVisuals(uv=uv)  # no image
+
 result.export("cube_with_hole.glb")
 
