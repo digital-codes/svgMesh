@@ -16,7 +16,7 @@ y: positiv is up
 z: positiv is towards the viewer
 */
 
-const useMap = false
+const useMap = true
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xf0f0f0);
