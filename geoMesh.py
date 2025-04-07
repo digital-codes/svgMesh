@@ -60,6 +60,13 @@ def extrude_feature_geometry(geometry, height, simplify_tolerance=None, use_z=Fa
     return trimesh.util.concatenate(meshes)
 
 def apply_uv_mapping(mesh):
+    vertices = mesh.vertices[:, :2]  # Use X and Y for UVs
+    uvs = (vertices - vertices.min(axis=0)) / (np.ptp(vertices, axis=0) + 1e-6)
+    uvs = np.clip(uvs, 0, 1)
+    mesh.visual = trimesh.visual.TextureVisuals(uv=uvs)
+    return mesh
+
+def apply_uv_mapping_old(mesh):
     vertices = mesh.vertices[:, :2]
     uvs = (vertices - vertices.min(axis=0)) / (vertices.ptp(axis=0) + 1e-6)
     mesh.visual = trimesh.visual.TextureVisuals(uv=uvs)
@@ -94,6 +101,12 @@ def main():
         action="store_true",
         help="Swap Y and Z axes before export (for 3D maps)"
     )    
+    parser.add_argument(
+        "-c", "--center",
+        action="store_true",
+        help="Center geometry by bounding box center"
+    )
+
     args = parser.parse_args()
 
     input_path = args.input
@@ -112,6 +125,11 @@ def main():
     if args.swap_yz:
         extruded.vertices = extruded.vertices[:, [0, 2, 1]]
         print("Swapped Y and Z axes for 3D map compatibility.")
+
+    if args.center:
+        center = extruded.bounding_box.centroid
+        extruded.apply_translation(-center)
+        print(f"Centered mesh to origin using bounding box center: {center}")
 
     output_path = os.path.splitext(input_path)[0] + ".glb"
     extruded.export(output_path)
