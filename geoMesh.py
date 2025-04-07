@@ -89,6 +89,11 @@ def main():
         action="store_true",
         help="Use Z as base height for extrusion"
     )
+    parser.add_argument(
+        "-yz", "--swap-yz",
+        action="store_true",
+        help="Swap Y and Z axes before export (for 3D maps)"
+    )    
     args = parser.parse_args()
 
     input_path = args.input
@@ -103,6 +108,10 @@ def main():
     # ✅ Print mesh summary
     print(f"Total vertices: {len(extruded.vertices)}")
     print(f"Total faces: {len(extruded.faces)}")
+
+    if args.swap_yz:
+        extruded.vertices = extruded.vertices[:, [0, 2, 1]]
+        print("Swapped Y and Z axes for 3D map compatibility.")
 
     output_path = os.path.splitext(input_path)[0] + ".glb"
     extruded.export(output_path)
